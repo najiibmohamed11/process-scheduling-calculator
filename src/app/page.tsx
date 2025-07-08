@@ -5,9 +5,20 @@ import Image from "next/image";
 import { ChangeEvent, useState } from "react";
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button";
-import {  DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { DropdownMenuContent, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const Data=[
   {
@@ -21,49 +32,105 @@ const Data=[
 interface FCFS{
   id:number,
   name:string,
-    brustTime:number|string,
-    waitingTime:number|string,
-    TurnAroundTime:number|string
+    brustTime:number|null,
+    waitingTime:number|null,
+    TurnAroundTime:number|null
+}
+
+enum algorithums{
+  FCFS="FCFS",
+  SJF="SJF",
+  priority="priority",
+  RR="RR"
 }
 
 export default function Home() {
   const [fcfs,setFcfs]=useState<FCFS[]>( [ {
     id:0,
     name:"",
-    brustTime:"",
-    waitingTime:"",
-    TurnAroundTime:""
+    brustTime:null,
+    waitingTime:null,
+    TurnAroundTime:null
   }])
+  const [currentAlgo,setCurrentAlgo]=useState<algorithums>(algorithums.FCFS)
 
   const onChangeTheInputValue=(e:ChangeEvent<HTMLInputElement>,id:number)=>{
     if(isNaN(Number(e.target.value))&&e.target.name!="name"){
       return;
     }
-    setFcfs((pref)=>pref.map((process)=>process.id==id?{...process,[e.target.name]:e.target.value}:process))
+    console.log(typeof e.target.value)
+    setFcfs((prev)=>prev.map((process)=>process.id==id?{...process,[e.target.name]:e.target.value}:process))
+    console.log(fcfs)
   }
   const addNewRow=()=>{
-    setFcfs(pref=>[...pref,({id:fcfs.length,name:"",brustTime:"",TurnAroundTime:"",waitingTime:""})])
+    setFcfs(pref=>[...pref,{id:fcfs[fcfs.length-1].id+1,name:"",brustTime:null,TurnAroundTime:null,waitingTime:null}])
   }
 
   const calculateFCFS=()=>{
     console.log(fcfs)
   }
+
+  const handleMenuChange=(algo:algorithums)=>{
+    setCurrentAlgo(algo)
+  }
+
+  const removerow=(id:number)=>{
+    setFcfs((prev)=>prev.filter((process)=>process.id!=id))
+  }
+
+
+  const calculate=()=>{
+    if(currentAlgo===algorithums.FCFS){
+      // w=bt[i-1]+wt[i-1]
+
+      for(let i=0; i<fcfs.length; i++){
+        //validation
+        if(!fcfs[i].name||!fcfs[i].brustTime){
+          return
+        }
+        //check if the process is first process
+        if(i==0){
+          const waitingTime= 0;
+          const turnaroundTime=Number(fcfs[i].brustTime ??0) + 0
+          setFcfs((prev)=>prev.map((process)=>process.id==fcfs[i].id?{...process,waitingTime:0,TurnAroundTime:turnaroundTime}:process))
+          console.log('i==0',fcfs)
+        }else{
+            const waitingTime= Number(fcfs[i-1].brustTime??0) + (fcfs[i-1].waitingTime??0);
+          const turnaroundTime= Number(fcfs[i].brustTime??0)+waitingTime
+          setFcfs((prev)=>prev.map((process)=>process.id==fcfs[i].id?{...process,waitingTime:waitingTime,TurnAroundTime:turnaroundTime}:process))
+        }
+        console.log(fcfs)
+
+        //calculate waiting time 
+      }
+    }else{
+      console.log('just chilling')
+    }
+
+
+  }
   return (
-   <div className="flex flex-col justify-center mx-96 h-screen  ">
+   <div className="flex flex-col justify-center mx-96 h-screen my-6 ">
     {/* <div className="w-10 h-10 bg-red-400">
 
     </div>
     <h1>hellow world</h1> */}
-    <DropdownMenuLabel>hi whats up</DropdownMenuLabel>
-    {/* <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button variant="outline">Open</Button>
-                  <DropdownMenuContent className="w-56" align="start">
-                  </DropdownMenuContent>
+      <div className="flex gap-4 mb-4">
 
-        </DropdownMenuTrigger>
-
-    </DropdownMenu> */}
+      <DropdownMenuLabel className="text-gray-500">algorithum</DropdownMenuLabel>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-56 cursor-pointer">{currentAlgo}</Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="start">
+        <DropdownMenuItem onClick={()=>handleMenuChange(algorithums.FCFS)}>{algorithums.FCFS}</DropdownMenuItem>
+        <DropdownMenuItem onClick={()=>handleMenuChange(algorithums.SJF)}>{algorithums.SJF}</DropdownMenuItem>
+        <DropdownMenuItem onClick={()=>handleMenuChange(algorithums.priority)}>{algorithums.priority}</DropdownMenuItem>
+        <DropdownMenuItem onClick={()=>handleMenuChange(algorithums.RR)}>{algorithums.RR}</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+      </div>
+   
 
       <Table>
         <TableCaption >process  scheduling</TableCaption>
@@ -92,16 +159,14 @@ export default function Home() {
                  <Input 
                   name="brustTime"
                   onChange={(e)=>onChangeTheInputValue(e,process.id)}
-                  value={process.brustTime} 
-                   />
+                  value={process.brustTime??""}  />
                        </TableCell>
                   <TableCell>
                       <Input
                            readOnly={true}
 
                           name="waitingTime"
-                  onChange={(e)=>onChangeTheInputValue(e,process.id)}
-                        value={process.waitingTime} 
+                        value={process.waitingTime??""} 
                           />
                    </TableCell>
                   <TableCell>
@@ -110,18 +175,19 @@ export default function Home() {
 
 
                     name="TurnAroundTime"
-                  onChange={(e)=>onChangeTheInputValue(e,process.id)}
-                  value={process.TurnAroundTime} 
-                   />
-                       </TableCell>
+                  value={process.TurnAroundTime??""}/>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" className="cursor-pointer" onClick={()=>removerow(process.id)}>-</Button>
+                  </TableCell>
                 </TableRow>
               )
             })
           }
-          <Button variant="outline" className="mt-4" onClick={addNewRow}>+</Button>
+          <Button variant="outline" className="mt-4 cursor-pointer" onClick={addNewRow}>+</Button>
         </TableBody>
       </Table>
-      <Button className="mt-4" onClick={calculateFCFS}>Calclulate</Button>
+      <Button className="mt-4" onClick={calculate}>Calclulate</Button>
    </div>
   );
 }
