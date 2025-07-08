@@ -66,9 +66,7 @@ export default function Home() {
     setFcfs(pref=>[...pref,{id:fcfs[fcfs.length-1].id+1,name:"",brustTime:null,TurnAroundTime:null,waitingTime:null}])
   }
 
-  const calculateFCFS=()=>{
-    console.log(fcfs)
-  }
+
 
   const handleMenuChange=(algo:algorithums)=>{
     setCurrentAlgo(algo)
@@ -82,7 +80,8 @@ export default function Home() {
   const calculate=()=>{
     if(currentAlgo===algorithums.FCFS){
       // w=bt[i-1]+wt[i-1]
-
+      let fcfsUpdatedData:FCFS[]=[...fcfs];
+      
       for(let i=0; i<fcfs.length; i++){
         //validation
         if(!fcfs[i].name||!fcfs[i].brustTime){
@@ -91,22 +90,26 @@ export default function Home() {
         //check if the process is first process
         if(i==0){
           const waitingTime= 0;
-          const turnaroundTime=Number(fcfs[i].brustTime ??0) + 0
-          setFcfs((prev)=>prev.map((process)=>process.id==fcfs[i].id?{...process,waitingTime:0,TurnAroundTime:turnaroundTime}:process))
-          console.log('i==0',fcfs)
+          fcfsUpdatedData[i].waitingTime=0;
+          fcfsUpdatedData[i].TurnAroundTime=Number(fcfs[i].brustTime);
         }else{
             const waitingTime= Number(fcfs[i-1].brustTime??0) + (fcfs[i-1].waitingTime??0);
           const turnaroundTime= Number(fcfs[i].brustTime??0)+waitingTime
-          setFcfs((prev)=>prev.map((process)=>process.id==fcfs[i].id?{...process,waitingTime:waitingTime,TurnAroundTime:turnaroundTime}:process))
+          fcfsUpdatedData[i].waitingTime=waitingTime;
+          fcfsUpdatedData[i].TurnAroundTime=turnaroundTime;
+
         }
         console.log(fcfs)
 
         //calculate waiting time 
+      
       }
+
+      setFcfs(fcfsUpdatedData)
+
     }else{
       console.log('just chilling')
     }
-
 
   }
   return (
